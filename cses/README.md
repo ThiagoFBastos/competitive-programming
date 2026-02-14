@@ -2,7 +2,7 @@
 
 - [Acyclic Graph Edges](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/Acyclic%20Graph%20Edges.cpp)
 
-    Such we always choose the same direction (from the lowest to the highest or the opposite) for all edges, we will never have a cycle because after go from the start vertice we cannot go back to it.
+    Such we always choose the same direction (from the lowest to the highest or the opposite) for all edges, we will never have a cycle because after go from the start vertex we cannot go back to it.
 
 - [Advertisement](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/Advertisement.cpp)
 
