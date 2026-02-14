@@ -25,3 +25,9 @@ Repository of code that I have submitted to competitive programming platforms fo
 - Yosupo: [thiago_bastos](https://judge.yosupo.jp/profile)
 - szkopul [thiago_bastos](https://szkopul.edu.pl/~thiago_bastos/)
 - Entre outros
+
+
+## Tutorials
+
+- [CSES](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/README.md)
+- [Yosupo](https://github.com/ThiagoFBastos/competitive-programming/blob/main/yosupo/README.md)

@@ -17,3 +17,18 @@
 
     This problem is less straightforward, because to solve it we have to find the count of supermasks that a mask is submask, because the AND (&) of many values is a submask of them. Now, we have a problem that is a mask can have more than 1 submask and because this the count can be incorrect given that a mask has a intersection with it's supermask. To solve this we use the inclusion-exclusion principle.
     We count the number of supermasks given a mask using SOS DP and the inclusion-exclusion is very easy to find: it's only multiply by -1 the masks with a odd number of ones.
+
+- [Another Game](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/Another%20Game.cpp)
+
+    If there is a heap with an odd number of coins, the first player can select all heaps with an odd number of coins and 
+    remove one coin from them, thus after this all heaps have an even number of coins and in the first player turn he can
+    leave all heaps with an even number of coins, making an invariant. Otherwise, if all heaps have an even number of coins
+    the strategy is the same, but for the second player.
+
+- [Apartments](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/Apartments.cpp)
+
+    The strategy is always choose the apartment with size closer to x - k and that not is greater than x + k, but looking for the desired sizes ordered.
+
+- [Apple Division](https://github.com/ThiagoFBastos/competitive-programming/blob/main/cses/Apple%20Division.cpp)
+
+    Simple bitmask DP split.
