@@ -1,76 +1,84 @@
-#pragma GCC target ("sse,sse2")
 #include <bits/stdc++.h>
 
 using namespace std;
 
-using ii = pair<int, int>;
-using vii = vector<ii>;
-using vi = vector<int>;
-typedef long long ll;
-typedef unsigned long long ull;
-typedef long double ld;
+template<class T>
+class BIT2D 
+{
+public:
 
-int st[1024][1024];
-
-void update_x(int, int, int, int = 0, int = 500, int = 1);
-void update_y(int, int, int, int = 0, int = 500, int = 1);
-int query_x(int, int, int, int, int = 0, int = 500, int = 1);
-int query_y(int, int, int, int = 0, int = 500, int = 1);
-
-void update_x(int r, int c, int x, int lox, int hix, int nox) {
-	if(lox != hix) {
-		int mid = (lox + hix) >> 1;
-		r <= mid ? update_x(r, c, x, lox, mid, nox << 1) : update_x(r, c, x, mid + 1, hix, nox << 1 | 1);	
+	BIT2D(size_t rows, size_t columns): 
+		_data (rows + 1, vector<T>(columns + 1, 0)),
+		_rows (rows),
+		_columns (columns)
+	{
+		
 	}
-	update_y(c, x, nox);
-}
 
-void update_y(int c, int x, int nox, int loy, int hiy, int noy) {
-	if(loy == hiy)
-		st[nox][noy] += x;
-	else {
-		int mid = (loy + hiy) >> 1;
-		c <= mid ? update_y(c, x, nox, loy, mid, noy << 1) : update_y(c, x, nox, mid + 1, hiy, noy << 1 | 1);
-		st[nox][noy] = st[nox][noy << 1] + st[nox][noy << 1 | 1];
+	void update(size_t x, size_t y, T value)
+	{
+		assert(x && y);
+
+		for(; x <= _rows; x += x & (~x + 1))
+			for(size_t k = y; k <= _columns; k += k & (~k + 1))
+				_data[x][k] += value;
 	}
-}
 
-int query_x(int lx, int rx, int ly, int ry, int lox, int hix, int nox) {
-	if(lx > rx) return 0;
-	else if(rx - lx == hix - lox) return query_y(ly, ry, nox);
-	int mid = (lox + hix) >> 1;
-	return query_x(lx, min(rx, mid), ly, ry, lox, mid, nox << 1) + 
-	query_x(max(mid + 1, lx), rx, ly, ry, mid + 1, hix, nox << 1 | 1);
-}
+	T query(size_t x, size_t y)
+	{
+		T answer {};
 
-int query_y(int ly, int ry, int nox, int loy, int hiy, int noy) {
-	if(ly > ry) return 0;
-	else if(ry - ly == hiy - loy) return st[nox][noy];
-	int mid = (loy + hiy) >> 1;
-	return query_y(ly, min(mid, ry), nox, loy, mid, noy << 1) +
-	query_y(max(ly, mid + 1), ry, nox, mid + 1, hiy, noy << 1 | 1);
-}
+		for(; x > 0; x -= x & (~x + 1))
+			for(size_t k = y; k > 0; k -= k & (~k + 1))
+				answer += _data[x][k];
+
+		return answer;
+	}
+
+	T query(size_t x0, size_t y0, size_t x1, size_t y1)
+	{
+		return query(x1, y1) - query(x1, y0 - 1) - query(x0 - 1, y1) + query(x0 - 1, y0 - 1);
+	}	
+
+private:
+	vector<vector<T>> _data;
+	size_t _rows;
+	size_t _columns;
+};
 
 int main() {
-	ios_base :: sync_with_stdio(false);
-	cin.tie(0);
-	cout.tie(0);
-	int Q;
-	cin >> Q;
-	while(Q--) {
-		char t;
-		int a, b, c, d, e;
-		cin >> t >> a >> b;
-		--a, --b;
-		if(t == 'U') {
-			cin >> c >> d >> e;
-			--c, --d;
-			update_x(a, b, e);
-			update_x(c + 1, b, -e);
-			update_x(a, d + 1, -e);
-			update_x(c + 1, d + 1, e); 
-		} else
-			cout << query_x(0, a, 0, b) << '\n';
+	ios_base::sync_with_stdio(false);
+	cin.tie(nullptr);
+
+	constexpr int N = 5e2;
+	BIT2D<int> bit(N, N);
+	size_t q;
+
+	cin >> q;
+
+	for(size_t i = 0; i < q; ++i) {
+		char cmd;
+
+		cin >> cmd;
+
+		if(cmd == 'U') {
+			size_t x0, y0, x1, y1;
+			int val;
+
+			cin >> x0 >> y0 >> x1 >> y1 >> val;
+
+			bit.update(x0, y0, val);
+			bit.update(x1 + 1, y0, -val);
+			bit.update(x0, y1 + 1, -val);
+			bit.update(x1 + 1, y1 + 1, val);
+		} else {
+			size_t x, y;
+
+			cin >> x >> y;
+
+			cout << bit.query(1, 1, x, y) << '\n';
+		}
 	}
+
 	return 0;
 }
