@@ -1,41 +1,30 @@
-#include "bits/stdc++.h"
+#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("mmx,sse,sse2,sse3,sse4,avx")
+
+#include <bits/stdc++.h>
 
 using namespace std;
 
-#define INF 1000000000
-#define INFLL 1000000000000000000ll
-#define EPS 1e-9
-#define all(x) x.begin(),x.end()
-#define rall(x) x.rbegin(),x.rend()
-#define pb push_back
-#define fi first
-#define sc second
-
-using i64 = long long;
-using u64 = unsigned long long;
-using ld = long double;
-using ii = pair<int, int>;
-//using i128 = __int128;
-
+constexpr long long INF = numeric_limits<long long>::max();
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-uniform_int_distribution<i64> uid(0ll, 1ll<<62);
+uniform_int_distribution<long long> uid(0ll, INF);
 
 struct node {
 	int key;
 	int val;
 	bool f[3][2];
-	i64 pry;
+	long long pry;
 	int l, r;
 	int prv;
 };
 
-const int N = 2e5;
+constexpr int N = 2e5, M = 1e4 + 5;
 
 node p[N];
-int root, nd, inv[N];
+int root, nd, inv[N], a[M];
 
-int newnode(int _val, bool _equal, bool _incr, bool _decr, int _key = 1) {
-	node& u = p[nd++];
+inline int newnode(int _val, bool _equal, bool _incr, bool _decr, int _key = 1) {
+	auto& u = p[nd++];
 	u.key = _key;
 	u.val = _val;
 	u.f[0][1] = u.f[0][0] = _equal;
@@ -47,10 +36,15 @@ int newnode(int _val, bool _equal, bool _incr, bool _decr, int _key = 1) {
 	return nd - 1;
 }
 
-void refresh(int t) {
+inline void refresh(int t) {
 	if(t == 0) return;
-	node &u = p[t], &l = p[u.l], &r = p[u.r];
+	
+	auto& u = p[t];
+	auto& l = p[u.l];
+	auto& r = p[u.r];
+
 	u.key = 1 + l.key + r.key;
+
 	for(int i = 0; i < 3; ++i)
 		u.f[i][1] = u.f[i][0] && l.f[i][1] && r.f[i][1];
 }
@@ -93,37 +87,47 @@ void heapfy(int t) {
 	}
 }
 
-int build(vector<int>& a, int lo, int hi) {
+int build(int a[], int lo, int hi) {
 	if(lo > hi) return 0;
-	int m = (lo + hi) / 2;
-	inv[m] = newnode(a[m], m&&a[m - 1]==a[m], m&&a[m-1]<=a[m],m&&a[m-1]>=a[m]);
+
+	int m = (lo + hi) >> 1;
+	
+	inv[m] = newnode(a[m], m && a[m - 1] == a[m], m && a[m-1] <= a[m],m && a[m-1] >= a[m]);
 	p[inv[m]].l = build(a, lo, m - 1);
 	p[inv[m]].r = build(a, m + 1, hi);
+	
 	if(m) p[inv[m]].prv = inv[m - 1];
+	
 	refresh(inv[m]);
 	heapfy(inv[m]);
+	
 	return inv[m];
 }
 
-void build(vector<int>& a) {
+inline void build(int a[], int n) {
 	nd = 0;
 	newnode(0, true, true, true, 0);
-	root = build(a, 0, (int)a.size() - 1);
+	root = build(a, 0, n - 1);
 }
 
-int query(int l, int r) {	
-	int a, b, c, ans;
+inline int query(int l, int r) {	
+	int a, b, c, ans = 3;
+
 	split(root, l, a, b);
 	split(b, r - l, b, c);
-	if(p[b].f[0][1]) ans = 0;
-	else if(p[b].f[1][1]) ans = 1;
-	else if(p[b].f[2][1]) ans = 2;
-	else ans = 3;
+	
+	for(int i = 0; i < 3; ++i) {
+		if(p[b].f[i][1]) {
+			ans = i;
+			break;
+		}
+	}
+
 	root = merge(a, merge(b, c));
 	return ans;
 }
 
-int find(int k) {
+inline int find(int k) {
 	int a, b, c;
 	split(root, k - 1, a, b);
 	split(b, 1, b, c);
@@ -132,64 +136,78 @@ int find(int k) {
 }
 
 void fix(int k) {
-	auto fixit = [&](auto&& fixit, int t, int k) -> void {
+	auto fixit = [](auto& self, int t, int k) -> void {
 		if(!t) return;
 		else if(p[p[t].l].key + 1 == k) {
-			node &A = p[t];
-			node &B = p[A.prv];
+			auto& A = p[t];
+			auto& B = p[A.prv];
+
 			A.f[0][0] = A.prv && A.val == B.val;
 			A.f[1][0] = A.prv && B.val <= A.val;
 			A.f[2][0] = A.prv && B.val >= A.val;
-		} else if(p[p[t].l].key + 1 > k) fixit(fixit, p[t].l, k);
-		else fixit(fixit, p[t].r, k - p[p[t].l].key - 1);
+
+		} else if(p[p[t].l].key + 1 > k)
+			self(self, p[t].l, k);
+		else 
+			self(self, p[t].r, k - p[p[t].l].key - 1);
+
 		refresh(t);
 	};
+	
 	fixit(fixit, root, k);
 }
 
-void swap_places(int i, int j) {
+inline void swap_places(int i, int j) {
 	if(i > j) swap(i, j);
 	int a = find(i), b = find(j);
 	swap(p[a].val, p[b].val);
 	fix(i); fix(i + 1); fix(j); fix(j + 1);
 }
 
-void add(int k, int v) {
+inline void add(int k, int v) {
 	int a, b, c = newnode(v, 0, 0, 0);
 	split(root, k - 1, a, b);
 	root = merge(merge(a, c), b);
-	if(int d = find(k + 1); d) p[d].prv = c;
+	if(int d = find(k + 1)) p[d].prv = c;
 	p[c].prv = find(k - 1);
 	fix(k); fix(k + 1);
 }
 
-void upd(int k, int v) {
+inline void upd(int k, int v) {
 	int a = find(k);
 	p[a].val = v;
 	fix(k); fix(k + 1);
 }
 
-void rem(int k) {
+inline void rem(int k) {
 	int a, b, c;
 	split(root, k - 1, a, b);
 	split(b, 1, b, c);
 	root = merge(a, c);
-	if(int d = find(k); d) p[d].prv = p[b].prv;	
+	if(int d = find(k)) p[d].prv = p[b].prv;	
 	fix(k);
 }
 
-string info[] = {"ALL EQUAL", "NON DECREASING", "NON INCREASING", "NONE"};
+const char* info[] = {"ALL EQUAL", "NON DECREASING", "NON INCREASING", "NONE"};
 
-void solve() {
+int main() {
+	ios_base :: sync_with_stdio(false);
+	cin.tie(0);
+	
 	int n, q;
+
 	while(cin >> n) {
-		vector<int> a(n);
-		for(int& v : a) cin >> v;
-		build(a);
+		for(int i = 0; i < n; ++i)
+			cin >> a[i];
+
+		build(a, n);
+
 		cin >> q;
-		while(q--) {
+		
+		while(q-- > 0) {
 			int t, x, y;
 			cin >> t >> x;
+
 			if(t == 0) {cin >> y; swap_places(x, y);}
 			else if(t == 1) {cin >> y; upd(x, y);}
 			else if(t == 2) {cin >> y; add(x, y);}
@@ -197,13 +215,6 @@ void solve() {
 			else {cin >> y; cout << info[query(x, y)] << '\n';}
 		}
 	}
-}
 
-int main() {
-	ios_base :: sync_with_stdio(false);
-	cin.tie(0);
-	int t = 1;
-	//cin >> t;
-	while(t--) solve();
 	return 0;
 }
