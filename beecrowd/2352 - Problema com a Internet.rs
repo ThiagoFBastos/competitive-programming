@@ -95,6 +95,16 @@ impl ConvexHullTrick {
         }
     }
 
+    pub fn with_capacity(n: usize) -> Self {
+        Self {
+            cht: VecDeque::with_capacity(n),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.cht.clear();
+    }
+
     pub fn add(&mut self, function: (i64, i64)) {
         let mut len = self.cht.len();
 
@@ -151,10 +161,14 @@ fn main() {
         g[i] = g[i - 1] + i as i64 * h;
     }
 
+    let mut good = ConvexHullTrick::with_capacity(n + 1);
+    let mut bad = ConvexHullTrick::with_capacity(n + 1);
+
     for i in 1..=n {
-        let mut good = ConvexHullTrick::new();
-        let mut bad = ConvexHullTrick::new();
         let mut answer = INF;
+
+        good.clear();
+        bad.clear();
 
         if i == 1 {
             bad.add((0, 0));
