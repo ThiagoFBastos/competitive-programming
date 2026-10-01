@@ -15,95 +15,101 @@ using i64 = long long;
 using u64 = unsigned long long;
 using ld = long double;
 using ii = pair<int, int>;
+using i128 = __int128;
 
-const int N = 1e4 + 100;
+constexpr int N = 1e4 + 100;
 
 struct FN {
-	i64 a, b;
-	i64 evaluate(i64 x) {
-		return a * x + b;
-	}
-	double intersection(FN other) {
-		return (b - other.b) / double(other.a - a);
-	}
-	bool parallel(FN other) {
-		return a == other.a;
-	}
-	bool operator<(FN other) {
-		return a < other.a || (a == other.a && b < other.b);
-	}
+    i64 a, b;
+
+    i64 evaluate(i64 x) const {
+        return a * x + b;
+    }
+
+    bool operator<(const FN& other) const {
+        return a < other.a || (a == other.a && b < other.b);
+    }
 };
 
 vector<FN> st[4 * N];
 FN f[N];
 
 struct CHTMergeSortTree {
-	int n;
+    int n;
 
-	bool overshadow(FN a, FN b, FN c) {
-		return a.parallel(b) || a.intersection(b) < b.intersection(c);
-	}
+    bool overshadow(const FN& a, const FN& b, const FN& c) const {
+        if(a.a == b.a || b.a == c.a)
+			return true;
 
-	void merge(vector<FN>& dest, vector<FN>& left, vector<FN>& right) {
-		int n = left.size(), m = right.size();
-		int i = n - 1, j = m - 1, k = 0;
+		i128 num1 = a.b - b.b;
+		i128 den1 = b.a - a.a;
 
-		dest.resize(n + m);
+		i128 num2 = b.b - c.b;
+		i128 den2 = c.a - b.a;
 
-		while(i >= 0 && j >= 0) {
-			FN nw = left[i] < right[j] ? left[i--] : right[j--];
-			while(k >= 2 && overshadow(nw, dest[k - 1], dest[k - 2])) --k;
-			dest[k++] = nw;	
-		}
+		return num1 * den2 <= num2 * den1;
+    }
 
-		while(i >= 0) {
-			while(k >= 2 && overshadow(left[i], dest[k - 1], dest[k - 2])) --k;
-			dest[k++] = left[i--];
-		}
+    void merge(vector<FN>& dest, const vector<FN>& left, const vector<FN>& right) {
+        int n = left.size(), m = right.size();
+        int i = n - 1, j = m - 1, k = 0;
 
-		while(j >= 0) {
-			while(k >= 2 && overshadow(right[j], dest[k - 1], dest[k - 2])) --k;
-			dest[k++] = right[j--];
-		}
+        dest.resize(n + m);
 
-		dest.resize(k);
-		reverse(all(dest));
-	}
+        while(i >= 0 && j >= 0) {
+            const auto& nw = left[i] < right[j] ? left[i--] : right[j--];
+            while(k >= 2 && overshadow(nw, dest[k - 1], dest[k - 2])) --k;
+            dest[k++] = nw;
+        }
 
-	void build(FN f[], int l, int r, int p = 1) {
-		if(l == r) { st[p] = {f[l]}; return;}
-		int m = (l + r) / 2;
-		build(f, l, m, 2 * p);
-		build(f, m + 1, r, 2 * p + 1);
-		merge(st[p], st[2 * p], st[2 * p + 1]);
-	}
+        while(i >= 0) {
+            while(k >= 2 && overshadow(left[i], dest[k - 1], dest[k - 2])) --k;
+            dest[k++] = left[i--];
+        }
 
-	// tem que ser na ordem x crescente
-	i64 query(int x, int l, int r, int lo, int hi, int p = 1) {
-		if(l > r || lo > hi || r < lo || l > hi) return -INFLL;
-		else if(lo >= l && hi <= r) {
-			auto& X = st[p];
-			while((int)X.size() >= 2) {
-				FN l1 = X.back(), l2 = *(X.end() - 2);
-				if(l1.evaluate(x) > l2.evaluate(x)) break;
-				X.pop_back();
-			}
-			return X.back().evaluate(x);
-		}
-		int m = (lo + hi) / 2;
-		i64 v1 = query(x, l, r, lo, m, 2 * p);
-		i64 v2 = query(x, l, r, m + 1, hi, 2 * p + 1);
-		return max(v1, v2);
-	}
+        while(j >= 0) {
+            while(k >= 2 && overshadow(right[j], dest[k - 1], dest[k - 2])) --k;
+            dest[k++] = right[j--];
+        }
 
-	i64 query(int x, int l, int r) {
-		return query(x, l, r, 0, n - 1);
-	}
+        dest.resize(k);
+        reverse(all(dest));
+    }
 
-	CHTMergeSortTree(FN* be, FN* en) {
-		n = en - be;
-		build(be, 0, n - 1);
-	}
+    void build(FN f[], int l, int r, int p = 1) {
+        if(l == r) { st[p] = {f[l]}; return;}
+        int m = (l + r) >> 1;
+        build(f, l, m, 2 * p);
+        build(f, m + 1, r, 2 * p + 1);
+        merge(st[p], st[2 * p], st[2 * p + 1]);
+    }
+
+    //It has to be in ascending/descending order of x.
+    i64 query(int x, int l, int r, int lo, int hi, int p = 1) {
+        if(l > r || lo > hi || r < lo || l > hi) return -INFLL;
+        else if(lo >= l && hi <= r) {
+            auto& X = st[p];
+            while((int)X.size() >= 2) {
+                const FN& l1 = X.back(), &l2 = *(X.end() - 2);
+                if(l1.evaluate(x) > l2.evaluate(x)) break;
+                X.pop_back();
+            }
+            return X.back().evaluate(x);
+        }
+        int m = (lo + hi) >> 1;
+        i64 v1 = query(x, l, r, lo, m, 2 * p);
+        i64 v2 = query(x, l, r, m + 1, hi, 2 * p + 1);
+        return max(v1, v2);
+    }
+
+    i64 query(int x, int l, int r) {
+        return query(x, l, r, 0, n - 1);
+    }
+
+    CHTMergeSortTree(FN* be, FN* en) {
+        n = en - be;
+        build(be, 0, n - 1);
+    }
 };
 
 i64 dp[N];
@@ -111,41 +117,41 @@ int n_products, target;
 
 void solve() {
 
-	cin >> n_products >> target;
+    cin >> n_products >> target;
 
-	vector<int> a(n_products), b(n_products);
+    vector<int> a(n_products), b(n_products);
 
-	for(int& v : a) cin >> v;
-	for(int& v : b) cin >> v;
+    for(int& v : a) cin >> v;
+    for(int& v : b) cin >> v;
 
-	fill(dp, dp + N, -INFLL);
-	dp[0] = 0;
+    fill(dp, dp + N, -INFLL);
+    dp[0] = 0;
 
-	for(int i = 0; i < n_products; ++i) {
+    for(int i = 0; i < n_products; ++i) {
 
-		for(int j = 0; j <= target; ++j) f[j] = {-2 * j, dp[j] + j * j};
+        for(int j = 0; j <= target; ++j) f[j] = {-2 * j, dp[j] + j * j};
 		
-		CHTMergeSortTree cht(f, f + target + 1);		
+        CHTMergeSortTree cht(f, f + target + 1);		
 
-		for(int j = 0; j < a[i]; ++j) dp[j] = -INFLL;
+        for(int j = 0; j < a[i]; ++j) dp[j] = -INFLL;
 
-		for(int j = a[i]; j <= target; ++j)
-			dp[j] = cht.query(j, max(0, j - b[i]), j - a[i]) + j * j;
-	}
+        for(int j = a[i]; j <= target; ++j)
+            dp[j] = cht.query(j, max(0, j - b[i]), j - a[i]) + j * j;
+    }
 
-	if(dp[target] < 0) {
-		cout << "IMPOSSIBLE\n";
-		return;
-	}
+    if(dp[target] < 0) {
+        cout << "IMPOSSIBLE\n";
+        return;
+    }
 
-	cout << dp[target] << '\n';
+    cout << dp[target] << '\n';
 }	
  
 int main() {
     ios_base :: sync_with_stdio(false);
-   	cin.tie(0);
+    cin.tie(0);
     int t = 1;
- 	//cin >> t;
+    //cin >> t;
     while(t--) solve();
     return 0;
 }
