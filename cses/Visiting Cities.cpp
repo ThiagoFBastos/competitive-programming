@@ -57,7 +57,7 @@ int main() {
 			int v = S.front();
 			S.pop();
 			for(auto [w, u] : Drev[v]) {
-				if(cost[u] + w == cost[v]) {
+				if(cost[u] != -1 && cost[u] + w == cost[v]) {
 					G[u].push_back(v);
 					G[v].push_back(u);
 					if(!cm[u]) {
